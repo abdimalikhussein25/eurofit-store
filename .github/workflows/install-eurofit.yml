@@ -1,0 +1,31 @@
+name: Install EUROFIT storefront
+on:
+  push:
+    paths:
+      - ".source/ready.txt"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expand verified storefront source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .source/part*.b64 | base64 -d | xz -d | tar -x
+          test -f package.json
+          test -f app/page.tsx
+          test -f app/api/checkout/route.ts
+          rm -rf .source
+      - name: Generate deterministic npm lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-audit
+      - name: Commit complete Next.js source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: install complete EUROFIT Next.js storefront" || exit 0
+          git push origin HEAD:main
