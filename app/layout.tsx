@@ -1,0 +1,4 @@
+import type {Metadata,Viewport} from 'next';import './globals.css';import {Header} from '@/components/Header';import {Footer} from '@/components/Footer';import {CartProvider} from '@/components/CartProvider';
+export const metadata:Metadata={title:{default:'EUROFIT | Fuel Your Every Rep',template:'%s | EUROFIT'},description:'Explore protein, creatine, performance supplements, wellness essentials and workout gear with Eurofit. Sample catalog — coming soon.',keywords:['Eurofit','protein','creatine','fitness supplements','gym accessories'],robots:{index:false,follow:false}};
+export const viewport:Viewport={themeColor:'#0e100d',width:'device-width',initialScale:1};
+export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body><CartProvider><Header/><main>{children}</main><Footer/></CartProvider></body></html>}

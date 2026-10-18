@@ -1,0 +1,13 @@
+import { NextRequest, NextResponse } from 'next/server';import { randomUUID } from 'crypto';import { neon } from '@neondatabase/serverless';import { validateOrder } from '@/lib/checkout';import { STORE } from '@/lib/config';
+export const runtime='nodejs';
+export async function POST(req:NextRequest){
+ // Safety gate: sample product data must not be charged until verified and explicitly enabled.
+ if(process.env.ENABLE_LIVE_CHECKOUT!=='true'||process.env.CATALOG_VERIFIED!=='true'||!process.env.PAYSTACK_SECRET_KEY||!process.env.DATABASE_URL)return NextResponse.json({error:'Payments are not enabled yet. This is a storefront preview. Contact the store owner before placing an order.'},{status:503});
+ try{const body=await req.json();const order=validateOrder(body);const sql=neon(process.env.DATABASE_URL);const reference='EF-'+randomUUID();const siteUrl=process.env.NEXT_PUBLIC_SITE_URL;if(!siteUrl||!/^https:\/\//.test(siteUrl))throw Error('Store URL is not configured');
+ await sql`INSERT INTO orders(reference,status,currency,subtotal,shipping,total,customer_name,customer_email,customer_phone,address,city,notes,items) VALUES(${reference},'pending',${STORE.currency},${order.subtotal},${order.delivery},${order.total},${order.customer.name},${order.customer.email},${order.customer.phone},${order.customer.address},${order.customer.city},${order.customer.notes},${JSON.stringify(order.lines)}::jsonb)`;
+ const response=await fetch('https://api.paystack.co/transaction/initialize',{method:'POST',headers:{Authorization:`Bearer ${process.env.PAYSTACK_SECRET_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({email:order.customer.email,amount:order.total*100,currency:STORE.currency,reference,callback_url:`${siteUrl}/order-status`,metadata:{customer_name:order.customer.name,phone:order.customer.phone,shipping_city:order.customer.city,custom_fields:[{display_name:'Order reference',variable_name:'order_reference',value:reference}]}}),signal:AbortSignal.timeout(12000)});
+ const result=await response.json();if(!response.ok||result.status!==true||!result.data?.authorization_url)throw Error('Payment provider unavailable. Please try again later.');
+ const url=String(result.data.authorization_url);if(!url.startsWith('https://checkout.paystack.com/'))throw Error('Unexpected payment gateway address');
+ return NextResponse.json({reference,authorization_url:url});
+ }catch(e){console.error('checkout failed',e);return NextResponse.json({error:e instanceof Error&&/Invalid|Please|empty|quantity|exceeds/.test(e.message)?e.message:'Could not initialize checkout. Try again later.'},{status:400})}
+}

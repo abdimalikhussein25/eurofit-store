@@ -1,0 +1,2 @@
+import Link from 'next/link';import{ArrowUpRight}from'lucide-react';
+export default function NotFound(){return <div className="shell utility-page empty-state tall"><span className="eyebrow">404 / WRONG TURN</span><h1>OFF THE TRACK<span>.</span></h1><p>We couldn't find that page. Let's get you back to your routine.</p><Link className="btn btn-lime" href="/shop">BACK TO THE SHOP <ArrowUpRight size={18}/></Link></div>}

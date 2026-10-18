@@ -1,0 +1,2 @@
+import Link from 'next/link';import { ArrowUpRight } from 'lucide-react';
+export function SectionHeading({eyebrow,title,desc,link='/shop',linkText='SHOP THE COLLECTION'}:{eyebrow:string,title:string,desc?:string,link?:string,linkText?:string}){return <div className="section-heading"><div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2>{desc&&<p>{desc}</p>}</div><Link href={link} className="under-link">{linkText} <ArrowUpRight size={17}/></Link></div>}
