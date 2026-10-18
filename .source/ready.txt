@@ -1,0 +1,2 @@
+Source bundle assembled from the EUROFIT Next.js storefront.
+Installer verifies all required files before committing.
